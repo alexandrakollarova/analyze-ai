@@ -1,36 +1,109 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ask Your Data – Chatbot Edition
 
-## Getting Started
+A conversational interface that lets users upload CSV/JSON files and ask questions about the data using natural language. The chatbot maintains context across turns and leverages LLMs to provide helpful, human-like insights.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 🧠 Project Overview
+
+**Goal**: Create a portfolio-worthy AI project where users can:
+- Upload tabular data (CSV or JSON)
+- Ask natural-language questions about that data
+- Get clear answers with context-aware follow-ups
+
+---
+
+## ✨ Features
+
+### ✅ Core Functionality
+- File upload support (CSV, JSON)
+- Chat UI with user/AI messages
+- OpenAI-powered natural language understanding
+- Persistent chat history (context memory)
+- In-browser data parsing and storage
+
+### 🧠 AI Capabilities
+- Understand and answer questions like:
+  - “What are the top 5 regions by sales?”
+  - “How did Q2 compare to Q1?”
+- Maintain context:
+  - “What about last year?”
+  - “Now break that down by product line.”
+
+### ⚙️ Optional Enhancements
+- Visualize results using charts (e.g., Recharts)
+- Export chat transcript
+- Save sessions to localStorage
+- Multi-file upload management
+- Let user customize the system prompt (e.g., "Act like a CFO")
+
+---
+
+## 🧱 Tech Stack
+
+| Layer       | Tools & Libraries          |
+|-------------|----------------------------|
+| Frontend    | React, Next, Tailwind CSS        |
+| Chat UI     | Custom or component library (e.g., shadcn/ui) |
+| File Parsing| Papaparse (CSV), JSON.parse |
+| LLM API     | OpenAI GPT-4 (via fetch)   |
+| State Mgmt  | React Context   |
+
+---
+
+## 📁 File Structure (Planned)
+
+```
+analyze-ai-chatbot/
+├── public/
+├── src/
+│   ├── components/
+│   │   ├── Chatbot.tsx
+│   │   ├── FileUpload.tsx
+│   │   └── TablePreview.tsx
+│   ├── hooks/
+│   ├── utils/
+│   │   ├── parseCsv.ts
+│   │   └── promptBuilder.ts
+│   ├── App.tsx
+│   └── main.tsx
+├── .env
+├── package.json
+└── README.md
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🧪 Development Plan
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Phase 1: Core Functionality
+- [ ] Set up React project
+- [ ] Implement file upload + CSV/JSON parsing
+- [ ] Display preview table
+- [ ] Build chat interface
+- [ ] Integrate OpenAI API
+- [ ] Send data + question + chat history in prompt
 
-## Learn More
+### Phase 2: Context Memory
+- [ ] Store chat history in session
+- [ ] Include relevant past messages in each prompt
+- [ ] Truncate history intelligently if token limit is reached
 
-To learn more about Next.js, take a look at the following resources:
+### Phase 3: Polish & UX
+- [ ] Add loading states + error handling
+- [ ] Add "Clear chat" and "New file" features
+- [ ] Style with Tailwind or design system
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Phase 4: (Optional) Visual Output + Persistence
+- [ ] Add chart-based visualizations for numeric answers
+- [ ] Store session in localStorage or file
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 🔐 Environment Variables
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Create a `.env` file:
+```
+VITE_OPENAI_API_KEY=your_openai_api_key_here
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

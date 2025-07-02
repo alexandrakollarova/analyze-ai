@@ -1,0 +1,17 @@
+{
+  "fontFamily": "'Geist', Arial, sans-serif",
+  "fontSize-xs": "12px",
+  "fontSize-sm": "14px",
+  "fontSize-base": "16px",
+  "fontSize-lg": "20px",
+  "fontSize-xl": "24px",
+  "lineHeight-xs": "16px",
+  "lineHeight-sm": "20px",
+  "lineHeight-base": "24px",
+  "lineHeight-lg": "28px",
+  "lineHeight-xl": "32px",
+  "fontWeight-normal": "400",
+  "fontWeight-medium": "500",
+  "fontWeight-semibold": "600",
+  "fontWeight-bold": "700"
+} 

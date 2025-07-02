@@ -1,0 +1,1 @@
+export const baseInputStyle = "border border-gray-light rounded-2xl focus:outline-none focus:border-gray-light focus:ring-1 focus:ring-gray-light transition"; 

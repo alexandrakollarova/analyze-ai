@@ -1,0 +1,1 @@
+export const baseLabelStyle = "text-sm font-medium select-none"; 

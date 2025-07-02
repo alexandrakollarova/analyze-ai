@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+
+/* ----------------------------------------------------------------------- */
+/* Design-token colors as CSS custom properties (one source of truth based on colot tokens)      */
+@theme {
+    /* Brand */
+    --color-primary: #615fff;
+    --color-primary-light: #7d7bff;
+    --color-primary-dark: #4f39f6;
+
+    --color-secondary: #e12afb;
+    --color-secondary-light: #f36aff;
+    --color-secondary-dark: #c800de;
+
+    /* Status */
+    --color-success: #00bc7d;
+    --color-success-light: #33e6a2;
+    --color-success-dark: #009966;
+
+    --color-warning: #ff6900;
+    --color-warning-light: #ff944d;
+    --color-warning-dark: #f54900;
+
+    --color-error: #fb2c36;
+    --color-error-light: #ff5a6a;
+    --color-error-dark: #e7000b;
+
+    --color-info: #00a6f4;
+    --color-info-light: #33c6ff;
+    --color-info-dark: #0084d1;
+
+    --color-gray: #737373;
+    --color-gray-light: #e5e5e5;
+    --color-gray-lighter: #f5f5f5;
+    --color-gray-lightest: #fafafa;
+    --color-gray-dark: #262626;
+    --color-gray-disabled: #f5f5f5;
+}
+
+@layer utilities {
+
+    /* Background */
+    .bg-background {
+        background-color: #fff;
+        color: var(--color-gray-dark);
+    }
+
+    .dark .bg-background {
+        background-color: var(--color-gray-dark);
+        color: #fff
+    }
+
+    /* Custom gray utilities */
+    /* Text */
+    .text-gray {
+        color: var(--color-gray);
+    }
+
+    .text-disabled {
+        color: var(--color-gray-lighter);
+    }
+
+    .text-gray-dark {
+        color: var(--color-gray-dark);
+    }
+
+    .text-gray-light {
+        color: var(--color-gray-light);
+    }
+
+    .text-gray-lightest {
+        color: var(--color-gray-lightest);
+    }
+
+    /* Bg */
+    .bg-gray {
+        background-color: var(--color-gray);
+    }
+
+    .bg-gray-disabled {
+        background-color: var(--color-gray-disabled);
+    }
+
+    .bg-gray-dark {
+        background-color: var(--color-gray-dark);
+    }
+
+    .bg-gray-light {
+        background-color: var(--color-gray-light);
+    }
+
+    .bg-gray-lighter {
+        background-color: var(--color-gray-lighter);
+    }
+
+    .bg-gray-lightest {
+        background-color: var(--color-gray-lightest);
+    }
+
+    /* Border */
+    .border-gray {
+        border-color: var(--color-gray);
+    }
+
+    .border-gray-dark {
+        border-color: var(--color-gray-dark);
+    }
+
+    .border-gray-light {
+        border-color: var(--color-gray-light);
+    }
+
+    .border-gray-lighter {
+        border-color: var(--color-gray-lighter);
+    }
+
+    .border-gray-lightest {
+        border-color: var(--color-gray-lightest);
+    }
+}
