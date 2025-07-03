@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ThemeToggle from './ThemeToggle';
 import Breadcrumb, { BreadcrumbItem } from "./Breadcrumb";
+import { Settings2Icon } from 'lucide-react';
+import UserPreferences from '@/components/UserPreferences';
 
 /**
  * Appbar component for top navigation/header bar.
@@ -22,6 +24,7 @@ interface AppbarProps {
  */
 
 export default function Appbar({ left, right, breadcrumbs }: AppbarProps) {
+  const [prefsOpen, setPrefsOpen] = useState(false);
   return (
     <header
       className="flex items-center justify-between px-6 py-4 fixed top-0 left-64 border-b border-gray-light"
@@ -32,7 +35,15 @@ export default function Appbar({ left, right, breadcrumbs }: AppbarProps) {
       </div>
       <div className="flex items-center gap-4">
         {right}
+        <button
+          className="p-2 rounded-full hover:bg-gray-light transition"
+          aria-label="Preferences"
+          onClick={() => setPrefsOpen(true)}
+        >
+          <Settings2Icon size={20} />
+        </button>
         <ThemeToggle />
+        <UserPreferences open={prefsOpen} onClose={() => setPrefsOpen(false)} />
       </div>
     </header>
   );

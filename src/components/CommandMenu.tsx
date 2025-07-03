@@ -3,6 +3,18 @@ import { useState } from 'react'
 import {
     HomeIcon, FoldersIcon, FolderLockIcon, BriefcaseIcon, PlusIcon, FileTextIcon, TableIcon, UsersIcon, GridIcon, MessageCircleIcon, SearchIcon
 } from 'lucide-react'
+import Tag from "../design-system/components/Tag"
+import { allSampleData } from "../lib/sampleData"
+
+// --- Constants & Config ---
+const fileItems = allSampleData.map(file => ({
+    value: `file-${file.title}`,
+    label: file.title,
+    icon: <FileTextIcon className="w-5 h-5" />,
+    group: 'Files',
+    action: () => alert(`Open file: ${file.file}`),
+    fileMeta: file,
+}))
 
 const items = [
     // Navigation
@@ -21,6 +33,8 @@ const items = [
     { value: 'search-docs', label: 'Search Docs', icon: <FileTextIcon className="w-5 h-5" />, group: 'Search', action: () => alert('Focus docs search') },
     // Chat
     { value: 'open-chat', label: 'Open Chat', icon: <MessageCircleIcon className="w-5 h-5" />, group: 'Other', action: () => alert('Open chat') },
+    // Files (appended below)
+    ...fileItems,
 ]
 
 const groups = [
@@ -28,12 +42,16 @@ const groups = [
     { heading: 'Create', items: items.filter(i => i.group === 'Create') },
     { heading: 'Search', items: items.filter(i => i.group === 'Search') },
     { heading: 'Other', items: items.filter(i => i.group === 'Other') },
+    { heading: 'Files', items: items.filter(i => i.group === 'Files') },
 ]
 
+// --- Component ---
 export default function CommandMenu() {
+    // --- State ---
     const [selection, setSelection] = useState<string | null>(null)
     const [search, setSearch] = useState('')
 
+    // --- Handlers ---
     // Custom filter for cmdk
     const filter = (value: string, search: string) => {
         const item = items.find(i => i.value === value)
@@ -42,6 +60,7 @@ export default function CommandMenu() {
         return haystack.includes(search.toLowerCase()) ? 1 : 0
     }
 
+    // --- Render ---
     return (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-gradient-to-br from-gray-100/60 to-gray-200/60 backdrop-blur-sm">
             <Command
@@ -77,6 +96,9 @@ export default function CommandMenu() {
                                 >
                                     {item.icon && <span className="text-gray-dark">{item.icon}</span>}
                                     <span className="flex-1">{item.label}</span>
+                                    {(/\.(pdf|docx?|xlsx?)$/i.test(item.label)) && (
+                                        <Tag variant="info" subtle className="ml-2">Documents</Tag>
+                                    )}
                                 </Command.Item>
                             ))}
                         </Command.Group>

@@ -45,7 +45,7 @@ type ButtonProps = (
   );
 
 const base =
-  "inline-flex items-center justify-center font-semibold rounded-2xl transition focus:outline-none focus:ring-1 disabled:opacity-50 disabled:pointer-events-none select-none cursor-pointer";
+  "inline-flex items-center justify-center font-semibold rounded-2xl transition hover:-translate-y-0.5 focus:outline-none focus:ring-1 disabled:opacity-50 disabled:pointer-events-none select-none cursor-pointer";
 
 const variantClasses: Record<Variant, string> = {
   primary:

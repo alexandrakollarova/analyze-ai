@@ -1,9 +1,10 @@
 "use client";
+import '@/design-system/utils/globals.css';
 import React from "react";
 import { usePathname } from "next/navigation";
-import Appbar from "./Appbar";
+import Appbar from "@/design-system/components/Appbar";
 import { SIDEBAR_LINKS } from "@/lib/sidebarLinks";
-import Sidebar from "./Sidebar";
+import AppSidebar from '@/components/AppSidebar';
 
 export default function BreadcrumbProvider({ children }: { children: React.ReactNode }) {
     const pathnameRaw = usePathname();
@@ -19,14 +20,14 @@ export default function BreadcrumbProvider({ children }: { children: React.React
     }
     if (pathname === "/") return (
         <>
-            <Sidebar nav={SIDEBAR_LINKS} />
+            <AppSidebar nav={SIDEBAR_LINKS} />
             <Appbar breadcrumbs={[]} />
             <main className="flex-1 ml-64 pt-20 p-8">{children}</main>
         </>
     );
     return (
         <>
-            <Sidebar nav={SIDEBAR_LINKS} />
+            <AppSidebar nav={SIDEBAR_LINKS} />
             <Appbar breadcrumbs={breadcrumbs} />
             <main className="flex-1 ml-64 pt-20 p-8">
                 {children}

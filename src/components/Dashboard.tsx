@@ -1,52 +1,19 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import FileUploader from "@/components/FileUploader";
 import ChatBox from "@/components/ChatBox";
-import DataPreview from "@/components/DataPreview";
 import Table from "@/design-system/components/Table";
 import Card from "@/design-system/components/Card";
 import Button from "@/design-system/components/Button";
 import Tag from "@/design-system/components/Tag";
 import Search from "@/design-system/components/Search";
-import { FileTextIcon, FileSpreadsheetIcon, FileType2Icon, FileIcon, FileJsonIcon, File } from "lucide-react";
+import { FileTextIcon, FileSpreadsheetIcon, FileType2Icon, FileIcon, FileJsonIcon, File, Loader2Icon } from "lucide-react";
 import TableToolbar from "@/components/TableToolbar";
+import { parseSizeString, formatSize, DOC_TYPE_TAG } from "@/lib/utils";
 
-const defaultSampleData = [
-  {
-    title: "Dashboard tech requirements",
-    size: "220 KB",
-    type: "docx",
-    date: "Jan 4, 2024",
-    documentType: "Product",
-    uploadedBy: "Amélie Laurent",
-  },
-  {
-    title: "Marketing site requirements",
-    size: "488 KB",
-    type: "docx",
-    date: "Jan 4, 2024",
-    documentType: "Marketing",
-    uploadedBy: "Ammar Foley",
-  },
-  {
-    title: "Q4_2025 Reporting",
-    size: "1.2 MB",
-    type: "pdf",
-    date: "Jan 4, 2024",
-    documentType: "Finance",
-    uploadedBy: "Amélie Laurent",
-  },
-  {
-    title: "FY_2024-25 Financials",
-    size: "628 KB",
-    type: "xls",
-    date: "Jan 4, 2024",
-    documentType: "Finance",
-    uploadedBy: "Sienna Hewitt",
-  },
-];
 
+// TODO: Remove this once we have a real recent files
 const recentFiles = [
   {
     name: "Sample Data.csv",
@@ -58,15 +25,6 @@ const recentFiles = [
   },
 ];
 
-// Map document types to Tag variants
-const DOC_TYPE_TAG: Record<string, import("@/design-system/components/Tag").TagVariant> = {
-  Product: "primary",
-  Customer: "success",
-  Marketing: "info",
-  Finance: "warning",
-  HR: "secondary",
-};
-
 interface DashboardProps {
   projectName?: string;
   noSampleData?: boolean;
@@ -74,14 +32,17 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ projectName, noSampleData, sampleData }: DashboardProps = {}) {
-  const [data, setData] = React.useState<Record<string, unknown>[]>(
-    noSampleData ? [] : sampleData ? sampleData : defaultSampleData
+  // --- State ---
+  const [data, setData] = useState<Record<string, unknown>[]>(
+    noSampleData ? [] : sampleData ? sampleData : []
   );
-  const [search, setSearch] = React.useState("");
+  const [uploadedFiles, setUploadedFiles] = useState<Record<string, File>>({});
+  const [pendingCategories, setPendingCategories] = useState<Record<string, boolean>>({});
+  const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("all");
 
-  // Table columns
-  const columns = React.useMemo(() => [
+  // --- Derived Values ---
+  const columns = useMemo(() => [
     {
       id: "title",
       header: "File name",
@@ -110,9 +71,15 @@ export default function Dashboard({ projectName, noSampleData, sampleData }: Das
       id: "documentType",
       header: "Document type",
       accessor: (row: any) => (
-        <Tag variant={DOC_TYPE_TAG[row.documentType] || "gray"} subtle>
-          {row.documentType}
-        </Tag>
+        pendingCategories[row.title] ? (
+          <Tag variant="gray" subtle>
+            <Loader2Icon className="animate-spin w-3 h-3" />
+          </Tag>
+        ) : (
+          <Tag variant={DOC_TYPE_TAG[row.documentType] || "gray"} subtle>
+            {row.documentType}
+          </Tag>
+        )
       ),
     },
     {
@@ -125,26 +92,88 @@ export default function Dashboard({ projectName, noSampleData, sampleData }: Das
       header: "Last modified",
       accessor: (row: any) => row.date,
     },
-  ], []);
+  ], [pendingCategories]);
 
-  // Handler to merge uploaded data with existing data
-  const handleDataParsed = (newData: Record<string, unknown>[]) => {
-    setData(prev => {
-      // Merge, avoiding duplicate file titles
-      const titles = new Set(prev.map(row => row.title));
-      const filteredNew = newData.filter(row => !titles.has(row.title));
-      return [...prev, ...filteredNew];
-    });
-  };
-
-  // Filtered data based on tab
-  const filteredData = React.useMemo(() => {
+  const filteredData = useMemo(() => {
     if (activeTab === "all") return data;
     if (activeTab === "documents") return data.filter(row => row.type === "docx");
     if (activeTab === "pdfs") return data.filter(row => row.type === "pdf");
     return data;
   }, [data, activeTab]);
 
+  // --- Handlers ---
+  /**
+   * Merge uploaded data with existing data and store File objects
+   */
+  const handleDataParsed = (newData: Record<string, unknown>[], files?: File[]) => {
+    setData(prev => {
+      // Merge, avoiding duplicate file titles
+      const titles = new Set((prev as Record<string, unknown>[]).map((row: Record<string, unknown>) => String(row.title)));
+      const filteredNew = (newData as Record<string, unknown>[]).filter((row: Record<string, unknown>) => !titles.has(String(row.title)));
+      return [...prev, ...filteredNew];
+    });
+    if (files) {
+      setUploadedFiles(prev => {
+        const next: Record<string, File> = { ...prev };
+        files.forEach((f: File) => { next[f.name] = f; });
+        return next;
+      });
+    }
+  };
+
+  /**
+   * AI category detection for table rows with missing/General documentType
+   */
+  useEffect(() => {
+    (data as Record<string, unknown>[]).forEach((row: Record<string, unknown>, idx: number) => {
+      const title = String(row.title);
+      if (!row.documentType || row.documentType === "General") {
+        if (!pendingCategories[title] && uploadedFiles[title]) {
+          setPendingCategories(prev => ({ ...prev, [title]: true }));
+          const file = uploadedFiles[title];
+          const reader = new FileReader();
+          reader.onload = async () => {
+            const text = reader.result as string;
+            const prompt = `Classify this file content into a business category (Finance, Legal, Operations, Sales, Product, HR, General):\n\n${text}`;
+            try {
+              const res = await fetch("/api/ask", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ question: prompt, data: [] }),
+              });
+              const { answer } = await res.json();
+              setData(prev =>
+                (prev as Record<string, unknown>[]).map((r: Record<string, unknown>) =>
+                  String(r.title) === title
+                    ? { ...r, documentType: answer.trim() }
+                    : r
+                )
+              );
+            } catch {
+              setData(prev =>
+                (prev as Record<string, unknown>[]).map((r: Record<string, unknown>) =>
+                  String(r.title) === title
+                    ? { ...r, documentType: "General" }
+                    : r
+                )
+              );
+            } finally {
+              setPendingCategories(prev => ({ ...prev, [title]: false }));
+            }
+          };
+          reader.readAsText(file.slice(0, 2048));
+        }
+      }
+    });
+  }, [data, uploadedFiles]);
+
+  const totalBytes = data.reduce((sum, row) => sum + (row.size ? parseSizeString(String(row.size)) : 0), 0);
+  const storageTotalBytes = 20 * 1024 * 1024; // 20 MB
+  const storagePercent = Math.min(100, Math.round((totalBytes / storageTotalBytes) * 100));
+  const storageUsed = formatSize(totalBytes);
+  const storageTotal = formatSize(storageTotalBytes);
+
+  // --- Render ---
   return (
     <>
       {/* Recent section */}

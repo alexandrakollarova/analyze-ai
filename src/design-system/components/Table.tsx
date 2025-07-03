@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import clsx from "clsx";
-import { ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronUp, ChevronDown, MoreVertical } from "lucide-react";
 import Divider from "./Divider";
 import Checkbox from "./Checkbox";
 
@@ -22,6 +22,7 @@ export default function Table<T>({ columns, data, className }: TableProps<T>) {
   const [sortCol, setSortCol] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc" | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [menuOpen, setMenuOpen] = useState<number | null>(null);
 
   // Find the column accessor for sorting
   const getSortAccessor = (col: Column<T>) => {
@@ -128,6 +129,7 @@ export default function Table<T>({ columns, data, className }: TableProps<T>) {
                 </th>
               );
             })}
+            <th className="px-4 py-3 text-center w-10"></th>
           </tr>
         </thead>
         <tbody>
@@ -151,8 +153,34 @@ export default function Table<T>({ columns, data, className }: TableProps<T>) {
                     {col.accessor ? col.accessor(row) : null}
                   </td>
                 ))}
+                <td className="px-4 py-4 text-center relative">
+                  <button
+                    className="p-2 rounded-full hover:bg-gray-light"
+                    aria-label="More actions"
+                    onClick={e => {
+                      e.stopPropagation();
+                      setMenuOpen(menuOpen === rowIndex ? null : rowIndex);
+                    }}
+                  >
+                    <MoreVertical size={18} />
+                  </button>
+                  {menuOpen === rowIndex && (
+                    <div className="absolute right-0 mt-2 w-32 bg-white border border-gray-light rounded shadow-lg z-10">
+                      <button
+                        className="block w-full text-left px-4 py-2 text-sm text-error hover:bg-gray-light rounded"
+                        onClick={() => {
+                          setMenuOpen(null);
+                          // TODO: implement delete logic
+                          alert('Delete file (not implemented)');
+                        }}
+                      >
+                        Delete file
+                      </button>
+                    </div>
+                  )}
+                </td>
               </tr>
-              {rowIndex < sortedData.length - 1 && <tr><td colSpan={columns.length + 1}><Divider marginY="my-0" /></td></tr>}
+              {rowIndex < sortedData.length - 1 && <tr><td colSpan={columns.length + 2}><Divider marginY="my-0" /></td></tr>}
             </React.Fragment>
           ))}
         </tbody>

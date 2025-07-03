@@ -6,35 +6,74 @@ import Card from "@/design-system/components/Card";
 import Dialog from "@/design-system/components/Dialog";
 import Input from "@/design-system/components/Input";
 import Tag from "@/design-system/components/Tag";
-import Alert from "@/design-system/components/Alert";
+import { UploadIcon, FileTextIcon, Trash2Icon, Loader2Icon } from "lucide-react";
 
 const DEPARTMENTS = ["Product", "Customer", "Marketing", "Finance", "HR"];
+
+// Simple ProgressBar
+function ProgressBar({ percent }: { percent: number }) {
+  return (
+    <div className="w-full h-2 bg-gray-light rounded-full overflow-hidden">
+      <div
+        className="h-2 bg-primary transition-all"
+        style={{ width: `${percent}%` }}
+      />
+    </div>
+  );
+}
 
 type FileUploaderProps = {
   onDataParsed: (data: Record<string, unknown>[]) => void;
 };
 
+// Helper to determine documentType from file name
+function getDocumentType(filename: string): string {
+  const lower = filename.toLowerCase();
+  if (lower.includes('budget')) return 'Finance';
+  if (lower.includes('nda')) return 'Legal';
+  if (lower.includes('manual')) return 'Operations';
+  if (lower.includes('customer')) return 'Sales';
+  return 'General';
+}
+
+// Map document types to Tag variants
+const DOC_TYPE_TAG: Record<string, import("@/design-system/components/Tag").TagVariant> = {
+  Product: "primary",
+  Customer: "success",
+  Marketing: "info",
+  Finance: "warning",
+  HR: "secondary",
+  Legal: "error",
+  Operations: "info",
+  Sales: "primary",
+  General: "gray",
+};
+
 export default function FileUploader({ onDataParsed }: FileUploaderProps) {
   const [open, setOpen] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [progress, setProgress] = useState<number[]>([]);
+  const [showToast, setShowToast] = useState(false);
   const [title, setTitle] = useState("");
-  const [department, setDepartment] = useState(DEPARTMENTS[0]);
+  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
-  const [showToast, setShowToast] = useState(false);
 
   const handleButtonClick = () => setOpen(true);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) setFile(files[0]);
+    const selected = e.target.files ? Array.from(e.target.files) : [];
+    setFiles(prev => [...prev, ...selected]);
+    setProgress(prev => [...prev, ...selected.map(() => 0)]);
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setDragActive(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      setFile(e.dataTransfer.files[0]);
+      const dropped = Array.from(e.dataTransfer.files);
+      setFiles(prev => [...prev, ...dropped]);
+      setProgress(prev => [...prev, ...dropped.map(() => 0)]);
     }
   };
 
@@ -54,105 +93,138 @@ export default function FileUploader({ onDataParsed }: FileUploaderProps) {
     return size + ' B';
   };
 
+  const handleRemoveFile = (idx: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== idx));
+    setProgress(prev => prev.filter((_, i) => i !== idx));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) return;
-    const ext = file.name.split(".").pop();
-    const newRow = {
-      title,
-      size: getFileSizeString(file.size),
-      type: ext,
-      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      documentType: department,
-      uploadedBy: "You",
-    };
-    onDataParsed([newRow]);
+    if (files.length === 0) return;
+    setUploading(true);
+    let newProgress = [...progress];
+    for (let i = 0; i < files.length; i++) {
+      // Simulate upload progress for each file
+      for (let j = 1; j <= 10; j++) {
+        await new Promise(res => setTimeout(res, 80));
+        newProgress[i] = j * 10;
+        setProgress([...newProgress]);
+      }
+      const file = files[i];
+      const ext = file.name.split(".").pop();
+      const newRow = {
+        title: file.name,
+        size: getFileSizeString(file.size),
+        type: ext,
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        documentType: DEPARTMENTS[0],
+        uploadedBy: "You",
+      };
+      onDataParsed([newRow]);
+      // Increment usage stats
+      const usageStats = JSON.parse(localStorage.getItem("usageStats") || "{}");
+      const newMessages = (usageStats.messages || 0) + 1;
+      localStorage.setItem("usageStats", JSON.stringify({ ...usageStats, messages: newMessages }));
+    }
     setOpen(false);
-    setFile(null);
-    setTitle("");
-    setDepartment(DEPARTMENTS[0]);
+    setFiles([]);
+    setProgress([]);
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
+    setUploading(false);
   };
 
   return (
     <>
       {showToast && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-          <Alert severity="success">File uploaded successfully!</Alert>
+          <Card className="shadow-lg"><div className="px-4 py-2"><span className="text-success font-semibold">File(s) uploaded successfully!</span></div></Card>
         </div>
       )}
       <Button onClick={handleButtonClick} type="button">
         Upload
       </Button>
-      <div className="text-xs text-gray text-center mt-1 mb-2">⌘ U to upload</div>
       <Dialog open={open} onClose={() => setOpen(false)} ariaLabel="Upload file" title="Upload file">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <h2 className="text-lg font-semibold mb-2">Upload file</h2>
-          <div
-            className={
-              "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer " +
-              (dragActive ? "border-primary bg-primary/10" : "border-gray-light bg-gray-light hover:bg-gray-light")
-            }
-            onClick={() => fileInputRef.current?.click()}
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-          >
-            {file ? (
-              <div className="text-primary font-medium">{file.name}</div>
-            ) : (
-              <>
-                <div className="text-gray">Drag and drop a file here, or click to select</div>
-                <div className="text-xs text-gray mt-2">CSV or JSON only</div>
-              </>
-            )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".csv,.json"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-dark mb-1">File title</label>
+        <Card className="p-0 rounded-2xl min-w-[380px] max-w-lg">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-6 p-6">
+            <div>
+              <div className="flex items-center gap-3 mb-1">
+                <UploadIcon size={24} className="text-primary" />
+                <h2 className="text-lg font-semibold">Import file</h2>
+              </div>
+              <div className="text-gray text-sm mb-4">Upload one or more CSVs to import your data.</div>
+            </div>
+            <div
+              className={
+                "flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-6 text-center transition cursor-pointer " +
+                (dragActive ? "border-primary bg-primary/10" : "border-gray-light bg-gray-light hover:bg-gray-light")
+              }
+              onClick={() => fileInputRef.current?.click()}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              style={{ minHeight: 120 }}
+            >
+              <FileTextIcon size={36} className="text-gray mb-2" />
+              <div className="font-medium text-gray-dark mb-1">Drag files here to import</div>
+              <div className="text-xs text-gray mb-2">or, click to browse (CSV, JSON, PDF, XLS, XLSX, DOC, DOCX, 4 MB max each)</div>
+              <Button type="button" variant="secondary" onClick={e => { e.stopPropagation(); fileInputRef.current?.click(); }}>
+                Select files
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,.json,.pdf,.xls,.xlsx,.doc,.docx"
+                multiple
+                onChange={handleFileChange}
+                className="hidden"
+              />
+            </div>
             <Input
+              type="text"
+              placeholder="Title"
               value={title}
               onChange={e => setTitle(e.target.value)}
-              required
-              placeholder="Enter file title"
+              disabled={uploading}
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-dark mb-1">Department</label>
-            <div className="flex gap-2 flex-wrap">
-              {DEPARTMENTS.map(dep => (
-                <button
-                  type="button"
-                  key={dep}
-                  className={
-                    "px-3 py-1 rounded-full border text-xs font-semibold " +
-                    (department === dep
-                      ? "bg-primary text-white border-primary"
-                      : "bg-white border-gray-light text-gray-dark hover:bg-gray-light")
-                  }
-                  onClick={() => setDepartment(dep)}
-                >
-                  {dep}
-                </button>
-              ))}
+            {files.length > 0 && (
+              <div className="flex flex-col gap-3">
+                {files.map((file, idx) => {
+                  const docType = getDocumentType(file.name);
+                  const tagVariant = DOC_TYPE_TAG[docType] || "gray";
+                  return (
+                    <div key={file.name + idx} className="flex items-center gap-3 bg-gray-light rounded-lg px-4 py-2">
+                      <FileTextIcon size={20} className="text-primary" />
+                      <div className="flex-1 min-w-0">
+                        <div className="truncate font-medium text-gray-dark flex items-center gap-2">
+                          {file.name}
+                          <Tag variant={tagVariant} subtle>{docType}</Tag>
+                        </div>
+                        <div className="text-xs text-gray">{getFileSizeString(file.size)}</div>
+                        <ProgressBar percent={progress[idx] || 0} />
+                      </div>
+                      {uploading ? (
+                        <Loader2Icon className="animate-spin text-gray" size={20} />
+                      ) : (
+                        <button type="button" onClick={() => handleRemoveFile(idx)} aria-label="Remove file">
+                          <Trash2Icon size={18} className="text-gray hover:text-error" />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            <div className="flex justify-end gap-2 mt-2">
+              <Button type="button" variant="secondary" onClick={() => setOpen(false)} disabled={uploading}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={files.length === 0 || uploading}>
+                {uploading ? "Uploading..." : "Import"}
+              </Button>
             </div>
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={!file || !title}>
-              Upload
-            </Button>
-          </div>
-        </form>
+          </form>
+        </Card>
       </Dialog>
     </>
   );
